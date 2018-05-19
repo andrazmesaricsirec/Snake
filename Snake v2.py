@@ -6,14 +6,16 @@ from pygame.locals import *
 class Snake:
 
     def __init__(self):
-        self.size = width, height = 324, 576
+        self.size = width, height = 288, 512
         self.inputs = {"up":pygame.K_UP,"down":pygame.K_DOWN, "left":pygame.K_LEFT, "right":pygame.K_RIGHT}
         self.objects = {}
+        self.locations = []
         self.object_locations = {}
         self.time_delay = 0.1
         self.bg_color = 0, 0, 0
         self.block_size = 16
-        self.goal_limits = [1, 20, 36]
+        self.goal_limits = [0, 18, 32]
+        self.disable = True
 
         self.new_block_name = 1
         self.last_input = ""
@@ -89,8 +91,10 @@ class Snake:
         self.objects["0"] = [self.head_block_load, self.head_block]
         self.head_block[0] = 16
         self.head_block[1] = 16
- 
+
+
     def input_test(self):
+        print(self.objects)
         self.key = pygame.key.get_pressed()
 
         try:
@@ -136,6 +140,7 @@ class Snake:
             first_coord = block_data[0]
             second_coord = block_data[1]
             self.object_locations["{}".format(block)] = [first_coord, second_coord]
+            self.locations.append([first_coord, second_coord])
 
     def move_tail(self, block):
         block_data_this_all = self.objects[block]
@@ -150,10 +155,8 @@ class Snake:
 
     def goal_test(self):
         if self.head_block == self.goal_block:
-            range_limit = self.goal_limits
-            self.goal_block[0] = randrange(range_limit[0], range_limit[1])*16
-            self.goal_block[1] = randrange(range_limit[0], range_limit[2])*16
-
+            self.test_overlap()
+            
             color_1 = randrange(0,255)
             color_2 = randrange(0,255)
             color_3 = randrange(0,255)
@@ -161,6 +164,20 @@ class Snake:
             self.bg_color = color_1, color_2, color_3
             self.score += 1
             self.make_new_block()
+            print(self.locations[0])
+
+    def test_overlap(self):
+        range_limit = self.goal_limits
+        random1 = randrange(range_limit[0], range_limit[1])*16
+        random2 = randrange(range_limit[0], range_limit[2])*16
+        try:
+            test = self.locations.index([random1, random2])
+        except ValueError:
+            self.goal_block[0] = random1
+            self.goal_block[1] = random2
+
+        else:
+            self.test_overlap()
 
     def make_new_block(self):
         block_name = str(self.new_block_name)
@@ -176,17 +193,23 @@ class Snake:
         self.new_block_name += 1
          
     def test_walls(self):
-        if self.head_block.left < self.goal_limits[0]*16 or self.head_block.right > self.goal_limits[1]*16:
-            self.hit = True
+        limit0 = self.goal_limits[0]
+        limit1 = self.goal_limits[1]
+        limit2 = self.goal_limits[2]
+        size = self.block_size
+        
+        if self.head_block.left < (limit0 * size) or self.head_block.right > (limit1 + 1) * size:
+            self.hit = self.disable
             
-        if self.head_block.top < self.goal_limits[0]*16 or self.head_block.bottom > self.goal_limits[2]*16:
-            self.hit = True
+        if self.head_block.top < (limit0 * size) or self.head_block.bottom > (limit2 + 1) * size:
+            self.hit = self.disable
+
     def test_tail(self):
         for block in self.objects:
             if block != "goal" and block != "0": 
                 block_data = self.objects[block][1]
                 if block_data == self.head_block:
-                    self.hit = True
+                    self.hit = self.disable
 
 main = Snake()
 main.run()
